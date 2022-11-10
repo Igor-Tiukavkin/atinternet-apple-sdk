@@ -111,11 +111,11 @@ public class CustomVars: NSObject {
     - parameter tracker: the tracker instance
     - returns: CustomVars instance
     */
-    init(tracker: Tracker) {
+    public init(tracker: Tracker) {
         self.tracker = tracker
     }
     
-    init(screen: AbstractScreen) {
+    public init(screen: AbstractScreen) {
         self.screen = screen
         self.tracker = screen.tracker
     }
