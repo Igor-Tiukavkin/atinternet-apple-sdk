@@ -90,17 +90,17 @@ public class RichMedia : BusinessObject {
     }
     
     /// true if media is embedded in app
-    open var isEmbedded: Bool = false {
+    @objc open var isEmbedded: Bool = false {
         didSet {
             _isEmbedded = isEmbedded
         }
     }
     
     /// Media type
-    @objc var type: String = ""
+    @objc public var type: String = ""
     
     /// Media type : live or clip
-    var broadcastMode: BroadcastMode = BroadcastMode.clip
+    @objc public var broadcastMode: BroadcastMode = BroadcastMode.clip
     
     /// Media name
     @available(*, deprecated, renamed: "mediaLabel")
@@ -186,10 +186,10 @@ public class RichMedia : BusinessObject {
     @objc public var mediaLevel2String: String?
     
     /// Refresh Duration
-    var refreshDuration: Int = 5
+    @objc public var refreshDuration: Int = 5
     
     /// Player Id
-    var playerId: Int = -1
+    @objc public var playerId: Int = -1
     
     /// Duration
     @objc public var duration: Int = 0
@@ -208,7 +208,7 @@ public class RichMedia : BusinessObject {
     let DynamicRefreshDefaultConfiguration = [0:5, 1:15, 5:30, 10: 60]
     var chronoRefresh: DynamicRefresher?
     
-    init(tracker: Tracker, playerId: Int) {
+    @objc public init(tracker: Tracker, playerId: Int) {
         self.playerId = playerId
         super.init(tracker: tracker)
     }
