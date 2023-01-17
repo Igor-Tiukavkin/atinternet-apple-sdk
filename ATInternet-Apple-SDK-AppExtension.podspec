@@ -8,7 +8,7 @@ Pod::Spec.new do |s|
 	s.author = "AT Internet"
 	s.requires_arc = true
 	s.source = { :git => "https://github.com/at-internet/atinternet-apple-sdk.git", :tag => s.version}
-	s.module_name = 'TrackerAppExtension'
+	s.module_name = 'Tracker'
 	s.ios.deployment_target	= '10.0'
 	s.pod_target_xcconfig = { 'OTHER_SWIFT_FLAGS' => '-DAT_EXTENSION' }
 	s.source_files = "ATInternetTracker/Sources/*.{h,m,swift}"
