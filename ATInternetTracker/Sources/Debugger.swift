@@ -31,21 +31,22 @@
 import UIKit
 #endif
 
-#if os(iOS) && !AT_EXTENSION
+#if os(iOS)
 class DebuggerButton: UIButton {}
 class DebuggerView: UIView {}
 
-internal class Debugger: NSObject {
+internal class DebuggerUI: NSObject {
     struct Static {
-        static var instance: Debugger?
+        static var instance: DebuggerUI?
         static var token: Int = 0
     }
     
     private static var __once: () = {
-            Static.instance = Debugger()
+            Static.instance = DebuggerUI()
         }()
     
     /// Application window
+    @available(iOSApplicationExtension, unavailable)
     lazy var applicationWindow: UIWindow? = UIApplication.shared.keyWindow
     /// Debug button
     lazy var debugButton: DebuggerButton = DebuggerButton()
@@ -99,8 +100,8 @@ internal class Debugger: NSObject {
     }()
     
     
-    class var sharedInstance: Debugger {
-        _ = Debugger.__once
+    class var sharedInstance: DebuggerUI {
+        _ = DebuggerUI.__once
         
         return Static.instance!
     }
@@ -108,6 +109,10 @@ internal class Debugger: NSObject {
     /**
      Add debugger to view controller
      */
+    
+    private let eventsListUpdatedNotification = NSNotification.Name.init("DebuggerUI.eventsListUpdated")
+    
+    @available(iOSApplicationExtension, unavailable)
     func initDebugger(offlineMode: String) {
         storage = Storage.sharedInstanceOf(offlineMode, forceStorageAccess: true)
         if !initialized {
@@ -120,17 +125,26 @@ internal class Debugger: NSObject {
             createDebugButton()
             createEventViewer()
             
-            gestureRecogniser = UIPanGestureRecognizer(target: self, action: #selector(Debugger.debugButtonWasDragged(_:)))
+            gestureRecogniser = UIPanGestureRecognizer(target: self, action: #selector(DebuggerUI.debugButtonWasDragged(_:)))
             debugButton.addGestureRecognizer(gestureRecogniser)
             
             applicationWindow!.bringSubviewToFront(debugButton)
+            
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(self.eventsListUpdated),
+                name: self.eventsListUpdatedNotification,
+                object: nil
+            )
         }
     }
     
     /**
      Remove debugger from view controller
      */
+    @available(iOSApplicationExtension, unavailable)
     func deinitDebugger() {
+        NotificationCenter.default.removeObserver(self)
         self.initialized = false
         debuggerShown = false
         debuggerAnimating = false
@@ -154,10 +168,14 @@ internal class Debugger: NSObject {
         event.message = message
         
         self.receivedEvents.insert(event, at: 0)
+        NotificationCenter.default.post(name: eventsListUpdatedNotification, object: nil)
+    }
+    
+    @available(iOSApplicationExtension, unavailable)
+    @objc private func eventsListUpdated() {
         DispatchQueue.main.sync(execute: {
             self.addEventToList()
         })
-        
     }
     
     // MARK: Debug button
@@ -165,6 +183,7 @@ internal class Debugger: NSObject {
     /**
      Create debug button
      */
+    @available(iOSApplicationExtension, unavailable)
     func createDebugButton() {
         if let logo = images["atinternet-logo@2x"] ?? nil {
             debugButton.setBackgroundImage(UIImage(named: logo), for: UIControl.State())
@@ -204,7 +223,7 @@ internal class Debugger: NSObject {
         // height constraint
         applicationWindow!.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:[debugButton(==73)]", options:NSLayoutConstraint.FormatOptions(rawValue: 0), metrics:nil, views:["debugButton": debugButton]))
         
-        debugButton.addTarget(self, action: #selector(Debugger.debuggerTouched), for: UIControl.Event.touchUpInside)
+        debugButton.addTarget(self, action: #selector(DebuggerUI.debuggerTouched), for: UIControl.Event.touchUpInside)
         
         UIView.animate(
             withDuration: 0.4,
@@ -219,6 +238,7 @@ internal class Debugger: NSObject {
     /**
      Debug button was dragged (change postion from left to right ...)
      */
+    @available(iOSApplicationExtension, unavailable)
     @objc func debugButtonWasDragged(_ recogniser: UIPanGestureRecognizer) {
         let button = recogniser.view as! DebuggerButton
         let translation = recogniser.translation(in: button)
@@ -279,6 +299,7 @@ internal class Debugger: NSObject {
     /**
      Debug button was touched
      */
+    @available(iOSApplicationExtension, unavailable)
     @objc func debuggerTouched() {
         for w in self.windows {
             w.window.isHidden = false
@@ -311,6 +332,7 @@ internal class Debugger: NSObject {
     /**
      Animate window (show or hide)
      */
+    @available(iOSApplicationExtension, unavailable)
     func animateEventLog() {
         UIView.animate(
             withDuration: 0.2,
@@ -367,6 +389,7 @@ internal class Debugger: NSObject {
     /**
      Create event viewer window
      */
+    @available(iOSApplicationExtension, unavailable)
     func createEventViewer() {
         let eventViewer: (window: DebuggerView, content: DebuggerView, menu: DebuggerTopBar, windowTitle: String) = self.createWindow("Event viewer")
         
@@ -375,7 +398,7 @@ internal class Debugger: NSObject {
         if let db = images["database64@2x"] ?? nil {
             offlineButton.setBackgroundImage(UIImage(named: db), for: UIControl.State())
         }
-        offlineButton.addTarget(self, action: #selector(Debugger.createOfflineHitsViewer), for: UIControl.Event.touchUpInside)
+        offlineButton.addTarget(self, action: #selector(DebuggerUI.createOfflineHitsViewer), for: UIControl.Event.touchUpInside)
         
         eventViewer.menu.addSubview(offlineButton)
         
@@ -427,7 +450,7 @@ internal class Debugger: NSObject {
         if let trash = pathFor(asset: "trash64@2x") {
             trashButton.setBackgroundImage(UIImage(named: trash), for: UIControl.State())
         }
-        trashButton.addTarget(self, action: #selector(Debugger.trashEvents), for: UIControl.Event.touchUpInside)
+        trashButton.addTarget(self, action: #selector(DebuggerUI.trashEvents), for: UIControl.Event.touchUpInside)
         
         // width constraint
         eventViewer.menu.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:[trashButton(==32)]", options:NSLayoutConstraint.FormatOptions(rawValue: 0), metrics:nil, views:["trashButton": trashButton]))
@@ -452,6 +475,7 @@ internal class Debugger: NSObject {
     /**
      Builds offline hits list rows
      */
+    @available(iOSApplicationExtension, unavailable)
     func getEventsList(_ eventViewer: (window:DebuggerView, content:DebuggerView, menu: DebuggerTopBar, windowTitle: String)) {
         
         let scrollViews = eventViewer.content.subviews.filter({ return $0 is UIScrollView }) as! [UIScrollView]
@@ -573,12 +597,14 @@ internal class Debugger: NSObject {
     }
     
     var previousConstraintForEvents: NSLayoutConstraint!
+    
+    @available(iOSApplicationExtension, unavailable)
     func buildEventRow(_ event: DebuggerEvent, tag: Int, scrollView: UIScrollView, previousRow: DebuggerView?) -> DebuggerView {
         let rowView = DebuggerView()
         rowView.translatesAutoresizingMaskIntoConstraints = false
         rowView.isUserInteractionEnabled = true
         rowView.tag = tag
-        rowView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(Debugger.eventRowSelected(_:))))
+        rowView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(DebuggerUI.eventRowSelected(_:))))
         
         scrollView.insertSubview(rowView, at: 0)
         
@@ -775,10 +801,12 @@ internal class Debugger: NSObject {
     /**
      Reload event list
      */
+    @available(iOSApplicationExtension, unavailable)
     func updateEventList() {
         getEventsList(self.windows[0])
     }
     
+    @available(iOSApplicationExtension, unavailable)
     @objc func addEventToList() {
         let window = self.windows[0]
         
@@ -792,6 +820,7 @@ internal class Debugger: NSObject {
     /**
      event list row selected
      */
+    @available(iOSApplicationExtension, unavailable)
     @objc func eventRowSelected(_ recogniser: UIPanGestureRecognizer) {
         self.windows[0].content.isHidden = true
         
@@ -805,6 +834,7 @@ internal class Debugger: NSObject {
     /**
      Delete received events
      */
+    @available(iOSApplicationExtension, unavailable)
     @objc func trashEvents() {
         self.receivedEvents.removeAll(keepingCapacity: false)
         updateEventList()
@@ -817,6 +847,7 @@ internal class Debugger: NSObject {
      
      - parameter hit: or message to display
      */
+    @available(iOSApplicationExtension, unavailable)
     func createEventDetailView(_ hit: String) -> DebuggerView {
         var eventDetail: (window: DebuggerView, content: DebuggerView, menu: DebuggerTopBar, windowTitle: String) = self.createWindow("Hit Detail")
         eventDetail.window.alpha = 0.0;
@@ -834,7 +865,7 @@ internal class Debugger: NSObject {
             backButton.setBackgroundImage(UIImage(named: back), for: UIControl.State())
         }
         backButton.tag = self.windows.count - 1
-        backButton.addTarget(self, action: #selector(Debugger.backButtonWasTouched(_:)), for: UIControl.Event.touchUpInside)
+        backButton.addTarget(self, action: #selector(DebuggerUI.backButtonWasTouched(_:)), for: UIControl.Event.touchUpInside)
         
         // width constraint
         eventDetail.menu.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:[backButton(==32)]", options:NSLayoutConstraint.FormatOptions(rawValue: 0), metrics:nil, views:["backButton": backButton]))
@@ -1111,6 +1142,7 @@ internal class Debugger: NSObject {
     /**
      Create offline hits window
      */
+    @available(iOSApplicationExtension, unavailable)
     @objc func createOfflineHitsViewer() {
         let offlineHits: (window: DebuggerView, content: DebuggerView, menu: DebuggerTopBar, windowTitle: String) = self.createWindow("Offline Hits")
         offlineHits.window.alpha = 0.0;
@@ -1129,7 +1161,7 @@ internal class Debugger: NSObject {
             backButton.setBackgroundImage(UIImage(named: back), for: UIControl.State())
         }
         backButton.tag = self.windows.count - 1
-        backButton.addTarget(self, action: #selector(Debugger.backButtonWasTouched(_:)), for: UIControl.Event.touchUpInside)
+        backButton.addTarget(self, action: #selector(DebuggerUI.backButtonWasTouched(_:)), for: UIControl.Event.touchUpInside)
         
         // width constraint
         offlineHits.menu.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:[backButton(==32)]", options:NSLayoutConstraint.FormatOptions(rawValue: 0), metrics:nil, views:["backButton": backButton]))
@@ -1157,7 +1189,7 @@ internal class Debugger: NSObject {
         if let trash = images["trash64@2x"] ?? nil {
             trashButton.setBackgroundImage(UIImage(named: trash), for: UIControl.State())
         }
-        trashButton.addTarget(self, action: #selector(Debugger.trashOfflineHits), for: UIControl.Event.touchUpInside)
+        trashButton.addTarget(self, action: #selector(DebuggerUI.trashOfflineHits), for: UIControl.Event.touchUpInside)
         
         // width constraint
         offlineHits.menu.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:[trashButton(==32)]", options:NSLayoutConstraint.FormatOptions(rawValue: 0), metrics:nil, views:["trashButton": trashButton]))
@@ -1185,7 +1217,7 @@ internal class Debugger: NSObject {
         if let refresh = images["refresh64@2x"] ?? nil {
             refreshButton.setBackgroundImage(UIImage(named: refresh), for: UIControl.State())
         }
-        refreshButton.addTarget(self, action: #selector(Debugger.refreshOfflineHits), for: UIControl.Event.touchUpInside)
+        refreshButton.addTarget(self, action: #selector(DebuggerUI.refreshOfflineHits), for: UIControl.Event.touchUpInside)
         
         // width constraint
         offlineHits.menu.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:[refreshButton(==32)]", options:NSLayoutConstraint.FormatOptions(rawValue: 0), metrics:nil, views:["refreshButton": refreshButton]))
@@ -1219,6 +1251,7 @@ internal class Debugger: NSObject {
     /**
      Refresh offline hits list
      */
+    @available(iOSApplicationExtension, unavailable)
     @objc func refreshOfflineHits() {
         getOfflineHitsList(self.windows[self.windows.count - 1])
     }
@@ -1226,6 +1259,7 @@ internal class Debugger: NSObject {
     /**
      Builds offline hits list rows
      */
+    @available(iOSApplicationExtension, unavailable)
     func getOfflineHitsList(_ offlineHits: (window:DebuggerView, content:DebuggerView, menu: DebuggerTopBar, windowTitle: String)) {
         
         let scrollViews = offlineHits.content.subviews.filter({ return $0 is UIScrollView }) as! [UIScrollView]
@@ -1341,7 +1375,7 @@ internal class Debugger: NSObject {
                 rowView.translatesAutoresizingMaskIntoConstraints = false
                 rowView.isUserInteractionEnabled = true
                 rowView.tag = i
-                rowView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(Debugger.offlineHitRowSelected(_:))))
+                rowView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(DebuggerUI.offlineHitRowSelected(_:))))
                 
                 scrollView.addSubview(rowView)
                 
@@ -1493,7 +1527,7 @@ internal class Debugger: NSObject {
                     deleteButton.setBackgroundImage(UIImage(named: trash), for: UIControl.State())
                 }
                 deleteButton.tag = i
-                deleteButton.addTarget(self, action: #selector(Debugger.deleteOfflineHit(_:)), for: UIControl.Event.touchUpInside)
+                deleteButton.addTarget(self, action: #selector(DebuggerUI.deleteOfflineHit(_:)), for: UIControl.Event.touchUpInside)
                 
                 rowView.addConstraint(NSLayoutConstraint(item: deleteButton,
                     attribute: .leading,
@@ -1528,6 +1562,7 @@ internal class Debugger: NSObject {
     /**
      Offline hit list row selected
      */
+    @available(iOSApplicationExtension, unavailable)
     @objc func offlineHitRowSelected(_ recogniser: UIPanGestureRecognizer) {
         self.windows[1].content.isHidden = true
         
@@ -1541,6 +1576,7 @@ internal class Debugger: NSObject {
     /**
      Delete offline hit
      */
+    @available(iOSApplicationExtension, unavailable)
     @objc func deleteOfflineHit(_ sender: UIButton) {
         _ = storage.delete(hits[sender.tag].id)
         getOfflineHitsList(self.windows[self.windows.count - 1])
@@ -1549,6 +1585,7 @@ internal class Debugger: NSObject {
     /**
      Delete all offline hits
      */
+    @available(iOSApplicationExtension, unavailable)
     @objc func trashOfflineHits() {
         _ = storage.delete()
         
@@ -1560,6 +1597,7 @@ internal class Debugger: NSObject {
     /**
      Create a new window
      */
+    @available(iOSApplicationExtension, unavailable)
     func createWindow(_ windowTitle: String) -> (window:DebuggerView, content:DebuggerView, menu: DebuggerTopBar, windowTitle: String) {
         let window = DebuggerView()
         if(windows.count == 0) {

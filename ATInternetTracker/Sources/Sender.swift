@@ -120,17 +120,17 @@ class Sender: Operation {
                         if(db.insert(&hit.url, hitId: self.hit.id, mhOlt: self.mhOlt)) {
                             self.tracker.delegate?.saveDidEnd?(hit.url)
                             
-                            #if os(iOS) && !AT_EXTENSION
+                            #if os(iOS)
                             if(self.tracker.enableDebugger) {
-                                Debugger.sharedInstance.addEvent(self.hit.url, icon: "save48")
+                                DebuggerUI.sharedInstance.addEvent(self.hit.url, icon: "save48")
                             }
                             #endif
                         } else {
                             self.tracker.delegate?.warningDidOccur?("Hit could not be saved : " + hit.url)
                             
-                            #if os(iOS) && !AT_EXTENSION
+                            #if os(iOS)
                             if(self.tracker.enableDebugger) {
-                                Debugger.sharedInstance.addEvent("Hit could not be saved : " + hit.url, icon: "warning48")
+                                DebuggerUI.sharedInstance.addEvent("Hit could not be saved : " + hit.url, icon: "warning48")
                             }
                             #endif
                         }
@@ -207,17 +207,17 @@ class Sender: Operation {
                                     if(db.insert(&self.hit.url, hitId: self.hit.id, mhOlt: self.mhOlt)) {
                                         self.tracker.delegate?.saveDidEnd?(self.hit.url)
                                         
-                                        #if os(iOS) && !AT_EXTENSION
+                                        #if os(iOS)
                                         if(self.tracker.enableDebugger) {
-                                            Debugger.sharedInstance.addEvent(self.hit.url, icon: "save48")
+                                            DebuggerUI.sharedInstance.addEvent(self.hit.url, icon: "save48")
                                         }
                                         #endif
                                     } else {
                                         self.tracker.delegate?.warningDidOccur?("Hit could not be saved : " + self.hit.url)
                                         
-                                        #if os(iOS) && !AT_EXTENSION
+                                        #if os(iOS)
                                         if(self.tracker.enableDebugger) {
-                                            Debugger.sharedInstance.addEvent("Hit could not be saved : " + self.hit.url, icon: "warning48")
+                                            DebuggerUI.sharedInstance.addEvent("Hit could not be saved : " + self.hit.url, icon: "warning48")
                                         }
                                         #endif
                                     }
@@ -239,9 +239,9 @@ class Sender: Operation {
                                 // On lève une erreur indiquant qu'une réponse autre que 200 a été reçue
                                 self.tracker.delegate?.sendDidEnd?(HitStatus.failed, message: errorMessage)
                                 
-                                #if os(iOS) && !AT_EXTENSION
+                                #if os(iOS)
                                 if(self.tracker.enableDebugger) {
-                                    Debugger.sharedInstance.addEvent(errorMessage, icon: "error48")
+                                    DebuggerUI.sharedInstance.addEvent(errorMessage, icon: "error48")
                                 }
                                 #endif
                                 
@@ -256,9 +256,9 @@ class Sender: Operation {
                             
                             self.tracker.delegate?.sendDidEnd?(HitStatus.success, message: self.hit.url)
                             
-                            #if os(iOS) && !AT_EXTENSION
+                            #if os(iOS)
                             if(self.tracker.enableDebugger) {
-                                Debugger.sharedInstance.addEvent(self.hit.url, icon: "sent48")
+                                DebuggerUI.sharedInstance.addEvent(self.hit.url, icon: "sent48")
                             }
                             #endif
                             
@@ -278,17 +278,17 @@ class Sender: Operation {
                         if(db.insert(&hit.url, hitId: self.hit.id, mhOlt: self.mhOlt)) {
                             self.tracker.delegate?.saveDidEnd?(hit.url)
                             
-                            #if os(iOS) && !AT_EXTENSION
+                            #if os(iOS)
                             if(self.tracker.enableDebugger) {
-                                Debugger.sharedInstance.addEvent(self.hit.url, icon: "save48")
+                                DebuggerUI.sharedInstance.addEvent(self.hit.url, icon: "save48")
                             }
                             #endif
                         } else {
                             self.tracker.delegate?.warningDidOccur?("Hit could not be saved : " + hit.url)
                             
-                            #if os(iOS) && !AT_EXTENSION
+                            #if os(iOS)
                             if(self.tracker.enableDebugger) {
-                                Debugger.sharedInstance.addEvent("Hit could not be saved : " + hit.url, icon: "warning48")
+                                DebuggerUI.sharedInstance.addEvent("Hit could not be saved : " + hit.url, icon: "warning48")
                             }
                             #endif
                         }
@@ -299,9 +299,9 @@ class Sender: Operation {
                 //On lève une erreur indiquant que le hit n'a pas été correctement construit et n'a pas pu être envoyé
                 self.tracker.delegate?.sendDidEnd?(HitStatus.failed, message: "Hit could not be parsed and sent")
                 
-                #if os(iOS) && !AT_EXTENSION
+                #if os(iOS)
                 if(self.tracker.enableDebugger) {
-                    Debugger.sharedInstance.addEvent("Hit could not be parsed and sent : " + hit.url, icon: "error48")
+                    DebuggerUI.sharedInstance.addEvent("Hit could not be parsed and sent : " + hit.url, icon: "error48")
                 }
                 #endif
 
@@ -338,46 +338,46 @@ class Sender: Operation {
                             
                             let backgroundTaskIdentifier: Int?
                             
-                            #if !(AT_EXTENSION || os(watchOS)) && canImport(UIKit)
-                            // Creates background task for offline hits
-                            if UIDevice.current.isMultitaskingSupported && tracker.backgroundTaskEnabled {
-                                backgroundTaskIdentifier = BackgroundTask.sharedInstance.begin()
-                            } else {
-                                backgroundTaskIdentifier = nil
-                            }
-                            #else
-                                backgroundTaskIdentifier = nil
-                            #endif
-                            
-                            #if !(AT_EXTENSION || os(watchOS))
-                            if(async) {
-                                for offlineHit in storage.get() {
-                                    let sender = Sender(tracker: tracker, hit: offlineHit, forceSendOfflineHits: forceSendOfflineHits, mhOlt: nil)
-                                    sender.completionBlock = {
-                                        guard let backgroundTaskIdentifier = backgroundTaskIdentifier else { return }
+                            #if canImport(UIKit)
+                            if UIApplication.safeShared != nil {
+                                // Creates background task for offline hits
+                                if UIDevice.current.isMultitaskingSupported && tracker.backgroundTaskEnabled {
+                                    backgroundTaskIdentifier = BackgroundTask.sharedInstance.begin()
+                                } else {
+                                    backgroundTaskIdentifier = nil
+                                }
+                                
+                                if(async) {
+                                    for offlineHit in storage.get() {
+                                        let sender = Sender(tracker: tracker, hit: offlineHit, forceSendOfflineHits: forceSendOfflineHits, mhOlt: nil)
+                                        sender.completionBlock = {
+                                            guard let backgroundTaskIdentifier = backgroundTaskIdentifier else { return }
+                                            BackgroundTask.sharedInstance.end(backgroundTaskIdentifier)
+                                        }
+                                        TrackerQueue.sharedInstance.queue.addOperation(sender)
+                                    }
+                                } else {
+                                    OfflineHit.processing = true
+                                    
+                                    for offlineHit in storage.get() {
+                                        OfflineHit.sentWithSuccess = false
+                                        let sender = Sender(tracker: tracker, hit: offlineHit, forceSendOfflineHits: forceSendOfflineHits, mhOlt: nil)
+                                        sender.send(false)
+                                        
+                                        if(!OfflineHit.sentWithSuccess) {
+                                            break
+                                        }
+                                        
+                                    }
+                                    
+                                    OfflineHit.processing = false
+                                    
+                                    if let backgroundTaskIdentifier = backgroundTaskIdentifier {
                                         BackgroundTask.sharedInstance.end(backgroundTaskIdentifier)
                                     }
-                                    TrackerQueue.sharedInstance.queue.addOperation(sender)
                                 }
                             } else {
-                                OfflineHit.processing = true
-                                
-                                for offlineHit in storage.get() {
-                                    OfflineHit.sentWithSuccess = false
-                                    let sender = Sender(tracker: tracker, hit: offlineHit, forceSendOfflineHits: forceSendOfflineHits, mhOlt: nil)
-                                    sender.send(false)
-                                    
-                                    if(!OfflineHit.sentWithSuccess) {
-                                        break
-                                    }
-                                    
-                                }
-                                
-                                OfflineHit.processing = false
-                                
-                                if let backgroundTaskIdentifier = backgroundTaskIdentifier {
-                                    BackgroundTask.sharedInstance.end(backgroundTaskIdentifier)
-                                }
+                                backgroundTaskIdentifier = nil
                             }
                             #endif
                         }

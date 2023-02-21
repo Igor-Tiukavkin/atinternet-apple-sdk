@@ -208,31 +208,34 @@ public class Tracker: NSObject {
     /// Dispatcher
     @objc lazy var dispatcher: Dispatcher = Dispatcher(tracker: self)
     
-    #if os(iOS) && !AT_EXTENSION
+    #if os(iOS)
     /// Sets Tracker in debug mode and display debugger window
-    @objc public var enableDebugger: Bool = false {
-        didSet {
-            if enableDebugger == true {
-                if (UIApplication.shared.windows.count == 0) {
-                    NotificationCenter.default.addObserver(self, selector: #selector(Tracker.displayDebuggerOnMainThread), name: UIWindow.didBecomeKeyNotification, object: nil)
-                } else {
-                    self.performSelector(onMainThread: #selector(self.displayDebugger), with: nil, waitUntilDone: false)
-                }
-            } else {
-                Debugger.sharedInstance.deinitDebugger()
-            }
-        }
-    }
+    @objc internal var enableDebugger: Bool = false
     
+    @available(iOSApplicationExtension, unavailable)
     @objc func displayDebuggerOnMainThread() {
-        self.performSelector(onMainThread: #selector(self.displayDebugger), with: nil, waitUntilDone: false)
+        DispatchQueue.main.async {
+            DebuggerUI.sharedInstance.initDebugger(offlineMode: self.configuration.parameters["storage"] ?? "never")
+        }
     }
     
     /**
      Display the debugger window
      */
-    @objc func displayDebugger() {
-        Debugger.sharedInstance.initDebugger(offlineMode: self.configuration.parameters["storage"] ?? "never")
+    @available(iOSApplicationExtension, unavailable)
+    @objc public func displayDebugger() {
+        self.enableDebugger = true
+        if (UIApplication.shared.windows.count == 0) {
+            NotificationCenter.default.addObserver(self, selector: #selector(Tracker.displayDebuggerOnMainThread), name: UIWindow.didBecomeKeyNotification, object: nil)
+        } else {
+            self.displayDebuggerOnMainThread()
+        }
+    }
+    
+    @available(iOSApplicationExtension, unavailable)
+    @objc public func disableDebugger() {
+        self.enableDebugger = false
+        DebuggerUI.sharedInstance.deinitDebugger()
     }
     #endif
     

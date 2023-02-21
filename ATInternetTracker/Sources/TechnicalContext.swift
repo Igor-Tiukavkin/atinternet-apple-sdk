@@ -491,9 +491,7 @@ class TechnicalContext: NSObject {
                 // On older OSes and/or devices, javascript is paused if the webview is not in a window, so
                 // the `evaluateJavaScript` completion handler may never be called. This may happen in app
                 // extensions as well since we can't use the main window there.
-                #if !AT_EXTENSION
-                UIApplication.shared.delegate?.window??.insertSubview(webView, at: 0)
-                #endif
+                UIApplication.safeShared?.delegate?.window??.insertSubview(webView, at: 0)
                 webView.evaluateJavaScript("navigator.userAgent") { (data, error) in
                     if let dataStr = data as? String {
                         _defaultUserAgent = dataStr

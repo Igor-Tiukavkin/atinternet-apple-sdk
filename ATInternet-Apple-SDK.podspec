@@ -19,14 +19,6 @@ Pod::Spec.new do |s|
 		tracker.platform = :ios
 	end
 
-	s.subspec 'AppExtension' do |appExt|
-        appExt.pod_target_xcconfig = { 'OTHER_SWIFT_FLAGS' => '-DAT_EXTENSION' }
-        appExt.source_files = "ATInternetTracker/Sources/*.{h,m,swift}"
-        appExt.exclude_files = ["ATInternetTracker/Sources/BackgroundTask.swift","ATInternetTracker/Sources/Debugger.swift","ATInternetTracker/Sources/TrackerTests-Bridging-Header.h"]
-        appExt.platform = :ios
-        appExt.resources = "ATInternetTracker/Sources/DefaultConfiguration*", "ATInternetTracker/Sources/TrackerBundle.bundle"
-	end
-
     s.subspec 'watchOSTracker' do |wos|
         wos.source_files = "ATInternetTracker/Sources/*.{h,m,swift}"
         wos.exclude_files = ["ATInternetTracker/Sources/BackgroundTask.swift","ATInternetTracker/Sources/ATReachability.swift","ATInternetTracker/Sources/Debugger.swift","ATInternetTracker/Sources/TrackerTests-Bridging-Header.h"]

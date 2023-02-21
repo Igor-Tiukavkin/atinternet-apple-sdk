@@ -88,17 +88,21 @@ public class BackgroundTask: NSObject {
         taskCounter += 1
         self.taskCounterLock.unlock()
         
-        #if canImport(UIKit) && !AT_EXTENSION
-        let identifier = UIApplication.shared.beginBackgroundTask(expirationHandler: {
-            self.end(taskKey)
-        })
-        tasks[taskKey] = identifier.rawValue
-        
-        if(completion != nil) {
-            tasksCompletionBlocks[taskKey] = completion
+        #if canImport(UIKit)
+        if let application = UIApplication.safeShared {
+            let identifier = application.beginBackgroundTask(expirationHandler: {
+                self.end(taskKey)
+            })
+            tasks[taskKey] = identifier.rawValue
+            
+            if(completion != nil) {
+                tasksCompletionBlocks[taskKey] = completion
+            }
+            
+            return taskKey
+        } else {
+            return -1
         }
-        
-        return taskKey
         #else
             return -1
         #endif
@@ -128,9 +132,9 @@ public class BackgroundTask: NSObject {
                 }
             }
             
-            #if canImport(UIKit) && !AT_EXTENSION
+            #if canImport(UIKit)
             // On arrete la tache en arrière plan
-            UIApplication.shared.endBackgroundTask(UIBackgroundTaskIdentifier(rawValue: taskId))
+            UIApplication.safeShared?.endBackgroundTask(UIBackgroundTaskIdentifier(rawValue: taskId))
             
             tasks[key] = UIBackgroundTaskIdentifier.invalid.rawValue
             tasks.removeValue(forKey: key)
@@ -138,3 +142,15 @@ public class BackgroundTask: NSObject {
         }
     }
 }
+
+#if os(iOS)
+internal extension UIApplication {
+    static var safeShared: UIApplication? {
+        if Bundle.main.bundlePath.hasSuffix(".appex") {
+            return nil
+        }
+        return UIApplication.value(forKeyPath: #keyPath(UIApplication.shared)) as? UIApplication
+    }
+}
+#endif
+
