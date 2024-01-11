@@ -742,7 +742,7 @@ internal class DebuggerUI: NSObject {
         /******* END HIT ********/
         
         /******* HIT TYPE ********/
-        let URL = Foundation.URL(string: event.message)
+        let URL = Foundation.URL(percentEncodedString: event.message)
         
         if let optURL = URL {
             hitTypeView.isHidden = false
@@ -924,7 +924,7 @@ internal class DebuggerUI: NSObject {
             multiplier: 1.0,
             constant: 0))
         
-        let URL = Foundation.URL(string: hit)
+        let URL = Foundation.URL(percentEncodedString: hit)
         
         if let optURL = URL {
             eventDetail.windowTitle = "Hit detail"
