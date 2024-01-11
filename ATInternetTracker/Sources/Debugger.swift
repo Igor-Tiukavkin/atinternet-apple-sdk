@@ -47,7 +47,7 @@ internal class DebuggerUI: NSObject {
     
     /// Application window
     @available(iOSApplicationExtension, unavailable)
-    lazy var applicationWindow: UIWindow? = UIApplication.shared.keyWindow
+    var applicationWindow: UIWindow? { UIApplication.shared.keyWindow }
     /// Debug button
     lazy var debugButton: DebuggerButton = DebuggerButton()
     /// Debug button position
